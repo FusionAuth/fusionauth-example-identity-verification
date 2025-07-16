@@ -158,22 +158,12 @@ export class FusionAuthSDK {
   }
   // end::logInUser
 
+  sendToRegistrationPage(res: Response) {
+    return this.sendToLoginOrRegistrationPage(res, true);
+  }
+
   sendToLoginPage(res: Response) {
-    const state = crypto.randomUUID();
-    res.cookie(this.configuration.oauthStateCookieName, state, { httpOnly: true });
-
-    let redirect = `${this.configuration.baseURL}/oauth2/authorize?client_id=${this.configuration.clientId}&`+
-        `scope=${encodeURIComponent(this.configuration.scope)}&`+
-        `response_type=code&`+
-        `redirect_uri=${this.getRedirectURI()}&`+
-        `state=${state}`;
-    if (this.configuration.enablePKCE) {
-      const pkcePair = pkceChallenge.default();
-      res.cookie(this.configuration.oauthPKCECookieName, { verifier: pkcePair.code_verifier, challenge: pkcePair.code_challenge }, { httpOnly: true });
-      redirect += `&code_challenge=${pkcePair.code_challenge}&code_challenge_method=S256`;
-    }
-
-    res.redirect(302, redirect);
+    return this.sendToLoginOrRegistrationPage(res, false);
   }
 
   /**
@@ -276,4 +266,27 @@ export class FusionAuthSDK {
     return payload;
   }
   // end::handleJWTException
+
+  private sendToLoginOrRegistrationPage(res: Response, isRegistration: boolean) {
+    const state = crypto.randomUUID();
+    res.cookie(this.configuration.oauthStateCookieName, state, { httpOnly: true });
+    let loginRegistrationPath = 'authorize';
+    if (isRegistration) {
+      loginRegistrationPath = 'register';
+    }
+
+    let redirect = `${this.configuration.baseURL}/oauth2/${loginRegistrationPath}?client_id=${this.configuration.clientId}&`+
+        `scope=${encodeURIComponent(this.configuration.scope)}&`+
+        `response_type=code&`+
+        `redirect_uri=${this.getRedirectURI()}&`+
+        `state=${state}`;
+    if (this.configuration.enablePKCE) {
+      const pkcePair = pkceChallenge.default();
+      res.cookie(this.configuration.oauthPKCECookieName, { verifier: pkcePair.code_verifier, challenge: pkcePair.code_challenge }, { httpOnly: true });
+      redirect += `&code_challenge=${pkcePair.code_challenge}&code_challenge_method=S256`;
+    }
+
+    res.redirect(302, redirect);
+  }
+
 }

@@ -66,6 +66,17 @@ app.get('/login', async (req, res) => {
 });
 // end::login
 
+// tag::register
+app.get('/register', async (req, res) => {
+  if (await sdk.userLoggedIn(req, res)) {
+    res.redirect(302, '/account');
+    return;
+  }
+
+  sdk.sendToRegistrationPage(res);
+});
+// end::register
+
 // OAuth return route
 app.get('/oauth-redirect', async (req, res) => {
   console.log("in oauthredirect");
